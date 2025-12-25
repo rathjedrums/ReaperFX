@@ -8,10 +8,10 @@ A collection of my Reaper JSFX plugins.
   </metadata>
   
   <category name="JSFX-Effects">
-    <reapack name="DrumSat.jsfx" type="script" desc="A low footprint saturator for drums">
+    <reapack name="DrumSat.jsfx" type="script" desc="DrumSat">
       <metadata>
         <description><![CDATA[
- It has 4x oversampling(immediate effect unlike the build in reaper oversamplign which needs stop/start of playback), auto gain (peak defined, so there is a short latency every time you change the gain) and 4 different types fo saturation. It also has bass protect (hi pass) and low pass.
+ A low footprint saturator for drums. It has 4x oversampling(immediate effect unlike the build in reaper oversamplign which needs stop/start of playback), auto gain (peak defined, so there is a short latency every time you change the gain) and 4 different types fo saturation. It also has bass protect (hi pass) and low pass.
         ]]></description>
       </metadata>
       <version name="1.0.0" author="Henrik Rathje" time="2025-12-25T12:50:00Z">
