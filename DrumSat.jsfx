@@ -1,6 +1,7 @@
 desc:DrumSat (Rathje Drum Saturator)
 // Author: Henrik Rathje
 // version: 1.0.0
+
 slider1:0<0,36,0.1>Drive (dB)
 slider2:0<0,3,1{Soft (atan),Hard (tanh),Asymmetric (Tube),Fuzz (Fold)}>Mode
 slider3:20000<200,20000,10>Tone / Low-Pass (Hz)
@@ -38,6 +39,7 @@ aa_coeff = aa_x / (aa_x + 1);
 
 @sample
 dry0 = spl0; dry1 = spl1;
+mode = slider2;
 
 // 1. Peak Tracker (Input)
 abs_in = max(abs(spl0), abs(spl1));
@@ -64,6 +66,7 @@ loop(os_count,
 
   // 4. Drive & Saturation
   ss0 = high0 * d_gain; ss1 = high1 * d_gain;
+  
   mode == 0 ? ( w_os0 = atan(ss0); w_os1 = atan(ss1); ) : 
   mode == 1 ? ( e2s0 = exp(2*ss0); w_os0 = (e2s0-1)/(e2s0+1); e2s1 = exp(2*ss1); w_os1 = (e2s1-1)/(e2s1+1); ) : 
   mode == 2 ? ( os0 = ss0 + 0.2; w_os0 = atan(os0) - atan(0.2); os1 = ss1 + 0.2; w_os1 = atan(os1) - atan(0.2); ) : 
@@ -73,7 +76,7 @@ loop(os_count,
   os_lp_l += lp_coeff * (w_os0 - os_lp_l);
   os_lp_r += lp_coeff * (w_os1 - os_lp_r);
   
-  // 6. aggregate
+  // 6. Aggregate
   out_os0 = os_lp_l + low0;
   out_os1 = os_lp_r + low1;
 
