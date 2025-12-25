@@ -15,7 +15,7 @@ A collection of my Reaper JSFX plugins.
         ]]></description>
       </metadata>
       <version name="1.1.0" author="Henrik Rathje" time="2025-12-25T12:50:00Z">
-        <source file="DrumSat.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/a3885bf94d4332579b7d86f443d68da9876b7eb1/DrumSat.jsfx</source>
+        <source file="DrumSat.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/2a605916e877bc5f48f044041fc4b35b7cc46147/DrumSat.jsfx</source>
       </version>
     </reapack>
   </category>
