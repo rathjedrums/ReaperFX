@@ -1,0 +1,104 @@
+desc:DrumSat (Rathje Drum Saturator)
+
+slider1:0<0,36,0.1>Drive (dB)
+slider2:0<0,3,1{Soft (atan),Hard (tanh),Asymmetric (Tube),Fuzz (Fold)}>Mode
+slider3:20000<200,20000,10>Tone / Low-Pass (Hz)
+slider4:20<20,250,1>Bass Protect / High-Pass (Hz)
+slider5:0<-12,0,0.1>Output Reduction (dB)
+slider6:100<0,100,1>Mix (%)
+slider7:1<0,1,1{Off,On}>Auto-Gain (Peak Match)
+slider8:0<0,1,1{Off,On}>4x Oversampling
+
+@init
+pk_in = 0; pk_out = 0;
+rel_coeff = 1 - exp(-1 / (srate * 0.5));
+lp_l = 0; lp_r = 0;
+split_l = 0; split_r = 0;
+// Filter memory for Anti-Aliasing (2-pole)
+aa_l1 = 0; aa_l2 = 0; aa_r1 = 0; aa_r2 = 0;
+
+@slider
+d_gain = exp(slider1 * (log(10)/20));
+ceiling = exp(slider5 * (log(10)/20));
+drywet = slider6 / 100;
+os_active = slider8;
+
+// Internal sample rate
+fs_int = os_active ? srate * 4 : srate;
+
+// Filter coeffs
+lp_coeff = (2 * $pi * slider3 / fs_int) / (2 * $pi * slider3 / fs_int + 1);
+x_split = 2 * $pi * slider4 / fs_int;
+split_coeff = x_split / (x_split + 1);
+
+// Anti-aliasing filter (set to approx. 20kHz)
+aa_x = 2 * $pi * 20000 / fs_int;
+aa_coeff = aa_x / (aa_x + 1);
+
+@sample
+dry0 = spl0; dry1 = spl1;
+
+// 1. Peak Tracker (Input)
+abs_in = max(abs(spl0), abs(spl1));
+pk_in = abs_in > pk_in ? abs_in : pk_in - rel_coeff * pk_in;
+
+// 2. Oversampling Engine
+os_count = os_active ? 4 : 1;
+os_idx = 1;
+
+loop(os_count,
+  // Linear interpolation of input
+  os_active ? (
+    s0 = last_spl0 + (spl0 - last_spl0) * (os_idx / 4);
+    s1 = last_spl1 + (spl1 - last_spl1) * (os_idx / 4);
+  ) : (
+    s0 = spl0; s1 = spl1;
+  );
+
+  // 3. Bass Protect Split
+  os_split_l += split_coeff * (s0 - os_split_l);
+  os_split_r += split_coeff * (s1 - os_split_r);
+  low0 = os_split_l; low1 = os_split_r;
+  high0 = s0 - low0; high1 = s1 - low1;
+
+  // 4. Drive & Saturation
+  ss0 = high0 * d_gain; ss1 = high1 * d_gain;
+  mode == 0 ? ( w_os0 = atan(ss0); w_os1 = atan(ss1); ) : 
+  mode == 1 ? ( e2s0 = exp(2*ss0); w_os0 = (e2s0-1)/(e2s0+1); e2s1 = exp(2*ss1); w_os1 = (e2s1-1)/(e2s1+1); ) : 
+  mode == 2 ? ( os0 = ss0 + 0.2; w_os0 = atan(os0) - atan(0.2); os1 = ss1 + 0.2; w_os1 = atan(os1) - atan(0.2); ) : 
+  ( w_os0 = sin(ss0); w_os1 = sin(ss1); );
+
+  // 5. Tone (Low-pass)
+  os_lp_l += lp_coeff * (w_os0 - os_lp_l);
+  os_lp_r += lp_coeff * (w_os1 - os_lp_r);
+  
+  // 6. aggregate
+  out_os0 = os_lp_l + low0;
+  out_os1 = os_lp_r + low1;
+
+  // 7. Anti-Aliasing Filter (2-pole LP) - Only when OS is active
+  os_active ? (
+    aa_l1 += aa_coeff * (out_os0 - aa_l1);
+    aa_l2 += aa_coeff * (aa_l1 - aa_l2);
+    aa_r1 += aa_coeff * (out_os1 - aa_r1);
+    aa_r2 += aa_coeff * (aa_r1 - aa_r2);
+    res0 = aa_l2; res1 = aa_r2;
+  ) : (
+    res0 = out_os0; res1 = out_os1;
+  );
+  
+  os_idx += 1;
+);
+
+last_spl0 = spl0; last_spl1 = spl1;
+processed0 = res0; processed1 = res1;
+
+// 8. Peak Hold Tracker (Output)
+abs_out = max(abs(processed0), abs(processed1));
+pk_out = abs_out > pk_out ? abs_out : pk_out - rel_coeff * pk_out;
+
+// 9. Auto-Gain & Final Output
+g_match = (slider7 && pk_out > 0.0001) ? (pk_in / pk_out) : 1.0;
+
+spl0 = (dry0 * (1 - drywet)) + (processed0 * g_match * ceiling * drywet);
+spl1 = (dry1 * (1 - drywet)) + (processed1 * g_match * ceiling * drywet);
