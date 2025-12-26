@@ -23,8 +23,8 @@ A collection of my Reaper JSFX plugins.
             <description><![CDATA[ Same as DrumSat but extended with a presence filter and a Iron Transformer (Neve style) slider. Try values between 40-60 which will fit most instruments.
             ]]></description>
           </metadata>
-          <version name="1.0.1" author="Henrik Rathje" time="2025-12-26T19:54:00Z">
-            <source file="DrumSat_TX.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/e5498b7ab76e12e4980b50c8ffd32744dbe27469/DrumSat_TX.jsfx</source>
+          <version name="1.0.2" author="Henrik Rathje" time="2025-12-26T19:54:00Z">
+            <source file="DrumSat_TX.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/2e55fd330eb9d7141382dc98ac19712a8efb46e6/DrumSat_TX.jsfx</source>
           </version>
         </reapack>    
   </category>
