@@ -1,6 +1,6 @@
 desc:DrumSat_TX (Rathje Drum Saturator - Transformer Edition)
 // Author: Henrik Rathje
-// version: 1.0.1
+// version: 1.0.2
 
 slider1:0<0,36,0.1>Drive (dB)
 slider2:0<0,3,1{Soft (atan),Hard (tanh),Asymmetric (Tube),Fuzz (Fold)}>Mode
@@ -30,7 +30,7 @@ drywet = slider6 / 100;
 os_active = slider8;
 pres_gain = (exp(slider9 * (log(10)/20))) - 1;
 
-// Transformer Amount (Skaleret 0.0 til 0.5 for ikke at ødelægge lyden)
+// Transformer Amount (Scaled between 0.0 and 0.5 to prevent destorying the sound too much)
 trans_amt = (slider10 / 100) * 0.5;
 
 fs_int = os_active ? srate * 4 : srate;
@@ -77,8 +77,8 @@ loop(os_count,
   ( w_os0 = sin(ss0); w_os1 = sin(ss1); );
 
   // 5. TRANSFORMER EMULATION (Iron Core)
-  // Vi tilføjer magnetisk mætning (cubic distortion) til HELE signalet (også bunden)
-  // Dette simulerer en udgangstransformer
+  //Adding magnetic saturation (cubic distortion) to ALL of the signal (including the low-end)
+  // Simulating an ouput transformer
   
   // intermediate splicing
   t_in0 = w_os0 + low0;
