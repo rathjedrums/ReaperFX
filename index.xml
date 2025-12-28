@@ -19,13 +19,23 @@ A collection of my Reaper JSFX plugins.
       </version>
     </reapack>
     <reapack name="DrumSat_TX" type="effect" desc="DrumSat_TX">
-          <metadata>
-            <description><![CDATA[ Same as DrumSat but extended with a presence filter and a Iron Transformer (Neve style) slider. Try values between 40-60 which will fit most instruments.
-            ]]></description>
-          </metadata>
-          <version name="1.0.2" author="Henrik Rathje" time="2025-12-26T19:54:00Z">
-            <source file="DrumSat_TX.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/2e55fd330eb9d7141382dc98ac19712a8efb46e6/DrumSat_TX.jsfx</source>
-          </version>
-        </reapack>    
+        <metadata>
+          <description><![CDATA[ Same as DrumSat but extended with a presence filter and a Iron Transformer (Neve style) slider. Try values between 40-60 which will fit most instruments.
+          ]]></description>
+        </metadata>
+        <version name="1.0.2" author="Henrik Rathje" time="2025-12-26T19:54:00Z">
+          <source file="DrumSat_TX.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/2e55fd330eb9d7141382dc98ac19712a8efb46e6/DrumSat_TX.jsfx</source>
+        </version>
+      </reapack> 
+    <reapack name="AnaMaker" type="effect" desc="AnalogMaker">
+        <metadata>
+          <description><![CDATA[ Same as DrumSat_TX but extended with a M/S or Width slider. Useful when putting a lof of saturation on a channel as this tends to make the signal more MID oriented, so the stereo persepctive suffers. Adjusting it to 105-110 usually fixes this.
+          ]]></description>
+        </metadata>
+        <version name="1.0.0" author="Henrik Rathje" time="2025-12-28T0:59:00Z">
+          <source file="AnaMaker.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/ab06c7b613819ee3620be7a985b8aa102dbe653e/AnaMaker.jsfx</source>
+        </version>
+      </reapack>    
+    
   </category>
 </index>
