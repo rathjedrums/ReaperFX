@@ -33,7 +33,7 @@ pres_gain = (exp(slider9 * (log(10)/20))) - 1;
 // Width calc
 width = slider11 / 100;
 
-// Transformer Amount (Scaled between 0.0 and 0.5 to prevent destorying the sound too much)
+// Transformer Amount (Scaled between 0.0 and 0.5 to prevent destroying the sound too much)
 trans_amt = (slider10 / 100) * 0.5;
 
 fs_int = os_active ? srate * 4 : srate;
@@ -134,4 +134,5 @@ pk_out = abs_out > pk_out ? abs_out : pk_out - rel_coeff * pk_out;
 
 g_match = (slider7 && pk_out > 0.0001) ? (pk_in / pk_out) : 1.0;
 spl0 = (dry0 * (1 - drywet)) + (processed0 * g_match * ceiling * drywet);
+
 spl1 = (dry1 * (1 - drywet)) + (processed1 * g_match * ceiling * drywet);
