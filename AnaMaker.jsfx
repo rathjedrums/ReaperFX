@@ -1,0 +1,137 @@
+desc:AnaMaker (Rathje saturation, transformer and width tool)
+// Author: Henrik Rathje
+// version: 1.0.0
+
+slider1:0<0,36,0.1>Drive (dB)
+slider2:0<0,3,1{Soft (atan),Hard (tanh),Asymmetric (Tube),Fuzz (Fold)}>Mode
+slider3:20000<200,20000,10>Tone / Low-Pass (Hz)
+slider4:20<20,250,1>Bass Protect / High-Pass (Hz)
+slider5:0<-12,0,0.1>Output Reduction (dB)
+slider6:100<0,100,1>Mix (%)
+slider7:1<0,1,1{Off,On}>Auto-Gain (Peak Match)
+slider8:0<0,1,1{Off,On}>4x Oversampling
+slider9:0<0,12,0.1>Presence / Air (dB)
+slider10:0<0,100,1>Transformer (Iron %)
+slider11:100<0,200,1>Stereo Width (%)
+
+@init
+pk_in = 0; pk_out = 0;
+rel_coeff = 1 - exp(-1 / (srate * 0.5));
+lp_l = 0; lp_r = 0;
+split_l = 0; split_r = 0;
+
+// Filter memory
+aa_l1 = 0; aa_l2 = 0; aa_r1 = 0; aa_r2 = 0;
+pres_lp_l = 0; pres_lp_r = 0;
+
+@slider
+d_gain = exp(slider1 * (log(10)/20));
+ceiling = exp(slider5 * (log(10)/20));
+drywet = slider6 / 100;
+os_active = slider8;
+pres_gain = (exp(slider9 * (log(10)/20))) - 1;
+// Width calc
+width = slider11 / 100;
+
+// Transformer Amount (Scaled between 0.0 and 0.5 to prevent destorying the sound too much)
+trans_amt = (slider10 / 100) * 0.5;
+
+fs_int = os_active ? srate * 4 : srate;
+
+lp_coeff = (2 * $pi * slider3 / fs_int) / (2 * $pi * slider3 / fs_int + 1);
+x_split = 2 * $pi * slider4 / fs_int;
+split_coeff = x_split / (x_split + 1);
+pres_coeff = (2 * $pi * 8000 / fs_int) / (2 * $pi * 8000 / fs_int + 1);
+aa_x = 2 * $pi * 24000 / fs_int;
+aa_coeff = aa_x / (aa_x + 1);
+
+@sample
+dry0 = spl0; dry1 = spl1;
+mode = slider2;
+
+// 1. Peak Tracker (Input)
+abs_in = max(abs(spl0), abs(spl1));
+pk_in = abs_in > pk_in ? abs_in : pk_in - rel_coeff * pk_in;
+
+// 2. Oversampling Loop
+os_count = os_active ? 4 : 1;
+os_idx = 1;
+
+loop(os_count,
+  os_active ? (
+    s0 = last_spl0 + (spl0 - last_spl0) * (os_idx / 4);
+    s1 = last_spl1 + (spl1 - last_spl1) * (os_idx / 4);
+  ) : (
+    s0 = spl0; s1 = spl1;
+  );
+
+  // 3. Bass Split
+  os_split_l += split_coeff * (s0 - os_split_l);
+  os_split_r += split_coeff * (s1 - os_split_r);
+  low0 = os_split_l; low1 = os_split_r;
+  high0 = s0 - low0; high1 = s1 - low1;
+
+  // 4. Preamp Drive Stage
+  ss0 = high0 * d_gain; ss1 = high1 * d_gain;
+  
+  mode == 0 ? ( w_os0 = atan(ss0); w_os1 = atan(ss1); ) : 
+  mode == 1 ? ( e2s0 = exp(2*ss0); w_os0 = (e2s0-1)/(e2s0+1); e2s1 = exp(2*ss1); w_os1 = (e2s1-1)/(e2s1+1); ) : 
+  mode == 2 ? ( os0 = ss0 + 0.2; w_os0 = atan(os0) - atan(0.2); os1 = ss1 + 0.2; w_os1 = atan(os1) - atan(0.2); ) : 
+  ( w_os0 = sin(ss0); w_os1 = sin(ss1); );
+
+  // 5. TRANSFORMER EMULATION (Iron Core)
+  //Adding magnetic saturation (cubic distortion) to ALL of the signal (including the low-end)
+  // Simulating an ouput transformer
+  
+  // intermediate splicing
+  t_in0 = w_os0 + low0;
+  t_in1 = w_os1 + low1;
+
+  // Magnetic formular: x - k * x^3 (3. harmonic)
+  // soft and fat
+  iron0 = t_in0 - (0.3 * t_in0 * t_in0 * t_in0);
+  iron1 = t_in1 - (0.3 * t_in1 * t_in1 * t_in1);
+
+  // Blend transformer in
+  w_os0 = t_in0 * (1 - trans_amt) + iron0 * trans_amt;
+  w_os1 = t_in1 * (1 - trans_amt) + iron1 * trans_amt;
+
+  // 6. Presence Boost (Post-Transformer)
+  pres_lp_l += pres_coeff * (w_os0 - pres_lp_l);
+  pres_lp_r += pres_coeff * (w_os1 - pres_lp_r);
+  pres_high_l = w_os0 - pres_lp_l; pres_high_r = w_os1 - pres_lp_r;
+  w_os0 = w_os0 + (pres_high_l * pres_gain);
+  w_os1 = w_os1 + (pres_high_r * pres_gain);
+
+  // 7. Tone Control
+  os_lp_l += lp_coeff * (w_os0 - os_lp_l);
+  os_lp_r += lp_coeff * (w_os1 - os_lp_r);
+  
+  // 8. Anti-Aliasing (24kHz)
+  os_active ? (
+    aa_l1 += aa_coeff * (os_lp_l - aa_l1); aa_l2 += aa_coeff * (aa_l1 - aa_l2);
+    aa_r1 += aa_coeff * (os_lp_r - aa_r1); aa_r2 += aa_coeff * (aa_r1 - aa_r2);
+    res0 = aa_l2; res1 = aa_r2;
+  ) : (
+    res0 = os_lp_l; res1 = os_lp_r;
+  );
+  os_idx += 1;
+);
+
+last_spl0 = spl0; last_spl1 = spl1;
+processed0 = res0; processed1 = res1;
+
+// 9. M/S Width Processing
+mid = (res0 + res1) * 0.5;
+side = (res0 - res1) * 0.5;
+side *= width; // Skalerer side-signalet
+processed0 = mid + side;
+processed1 = mid - side;
+
+// 10. Peak Tracker & Output
+abs_out = max(abs(processed0), abs(processed1));
+pk_out = abs_out > pk_out ? abs_out : pk_out - rel_coeff * pk_out;
+
+g_match = (slider7 && pk_out > 0.0001) ? (pk_in / pk_out) : 1.0;
+spl0 = (dry0 * (1 - drywet)) + (processed0 * g_match * ceiling * drywet);
+spl1 = (dry1 * (1 - drywet)) + (processed1 * g_match * ceiling * drywet);
