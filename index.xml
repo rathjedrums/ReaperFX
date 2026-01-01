@@ -32,8 +32,11 @@ A collection of my Reaper JSFX plugins.
           <description><![CDATA[ Same as DrumSat_TX but extended with a M/S or Width slider. Useful when putting a lof of saturation on a channel as this tends to make the signal more MID oriented, so the stereo persepctive suffers. Adjusting it to 105-110 usually fixes this.
           ]]></description>
         </metadata>
-        <version name="1.0.0" author="Henrik Rathje" time="2025-12-28T0:59:00Z">
+        <version name="1.0.0" author="Henrik Rathje" time="2025-12-28T00:59:00Z">
           <source file="AnaMaker.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/27e6b4f162c04257ee578fbfc8c5084642e3228d/AnaMaker.jsfx</source>
+        </version>
+        <version name="1.1.0" author="Henrik Rathje" time="2026-01-01T22:42:00Z">
+          <source file="AnaMaker_1.1.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/518d8f54e2f4634b645aaa62c6b4c5fd720602fb/AnaMaker_1.1.0.jsfx</source>
         </version>
       </reapack>    
     
