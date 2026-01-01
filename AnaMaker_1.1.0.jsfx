@@ -131,4 +131,4 @@ pk_out = abs_out > pk_out ? abs_out : pk_out - rel_coeff * pk_out;
 g_match = (slider8 && pk_out > 0.0001) ? (pk_in / pk_out) : 1.0;
 
 spl0 = (dry0 * (1 - drywet)) + (processed0 * g_match * ceiling * drywet);
-spl1 = (dry1 * (1 - drywet)) + (processed1 * g_match * ceiling * drywet);
+spl1 = (dry1 * (1 - drywet)) + (processed1 * g_match * ceiling * drywet); 
