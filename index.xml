@@ -39,6 +39,5 @@ A collection of my Reaper JSFX plugins.
           <source file="AnaMaker_1.1.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/518d8f54e2f4634b645aaa62c6b4c5fd720602fb/AnaMaker_1.1.0.jsfx</source>
         </version>
       </reapack>    
-    
   </category>
 </index>
