@@ -1,0 +1,102 @@
+desc:AnaTape v1.3.0. (by Rathje)
+
+slider1:8<0,24,0.1>Drive (dB)
+slider2:20000<2000,20000,100>High Cut (Hz)
+slider3:2<0,12,0.1>Head Bump (dB)
+slider4:0<0,2,1{30 ips (Hi-Fi),15 ips (Standard),7.5 ips (Vintage)}>Tape Speed
+slider5:5<0,100,1>Tape Age / Wear (%)
+slider6:25<0,100,1>Wow & Flutter (%)
+slider7:0<0,1,1{Off,4x Oversampling}>Oversampling
+slider8:1<0,1,1{Off,On}>Auto-Gain
+slider9:0<-24,24,0.1>Output Trim (dB)
+
+
+@init
+freemem = 0;
+delay_size = srate * 0.5; // 500ms buffer 
+buf_l = freemem; freemem += delay_size + 1;
+buf_r = freemem; freemem += delay_size + 1;
+memset(buf_l, 0, delay_size);
+memset(buf_r, 0, delay_size);
+
+delay_pos = 0;
+in_peak = 0.01; out_peak = 0.01; gain_coeff = 1;
+phase_wow = 0; phase_flutter = 0;
+
+@slider
+drive_gain = 2 ^ (slider1 / 6.02);
+out_trim = 2 ^ (slider9 / 6.02);
+age = slider5 / 100;
+
+// Stabil High Cut
+lp_alpha = 1 - exp(-2 * $pi * slider2 / srate);
+
+// Stabil Head Bump
+hb_f = (slider4 == 0 ? 110 : (slider4 == 1 ? 80 : 65)) + (age * 30);
+hb_alpha = 1 - exp(-2 * $pi * hb_f / srate);
+hb_m = (slider4 == 0 ? 0.6 : (slider4 == 1 ? 1.0 : 1.4));
+hb_b = (2 ^ ((slider3 + (age * 2)) / 6.02) - 1) * hb_m;
+
+@sample
+// 1. WOW & FLUTTER
+w_f_amt = slider6 * 0.01;
+w_f_mod = (slider4 == 2 ? 1.5 : (slider4 == 1 ? 1.0 : 0.5)); // Scaling
+
+phase_wow += (0.5 * $pi / srate); 
+phase_flutter += (8.0 * $pi / srate);
+// Keep phase inside 2*PI to avoid precision loss over time
+phase_wow > 2*$pi ? phase_wow -= 2*$pi;
+phase_flutter > 2*$pi ? phase_flutter -= 2*$pi;
+
+lfo = sin(phase_wow)*0.8 + sin(phase_flutter)*0.2;
+// Keep the delay very low(2-5ms) to avoid artifacts 
+cur_del = (w_f_amt * 0.002 * srate * lfo * w_f_mod) + (0.005 * srate);
+
+// Read/write buffer
+buf_l[delay_pos] = spl0;
+buf_r[delay_pos] = spl1;
+
+rd_pos = delay_pos - cur_del;
+rd_pos < 0 ? rd_pos += delay_size;
+i_pos = floor(rd_pos);
+f_pos = rd_pos - i_pos;
+
+// Linear interpolation
+s0 = buf_l[i_pos]*(1-f_pos) + buf_l[(i_pos+1)%delay_size]*f_pos;
+s1 = buf_r[i_pos]*(1-f_pos) + buf_r[(i_pos+1)%delay_size]*f_pos;
+
+delay_pos = (delay_pos + 1) % delay_size;
+
+// 2. PEAK IN
+a_in = max(abs(s0), abs(s1));
+in_peak = (a_in > in_peak) ? a_in : in_peak * 0.99999;
+
+// 3. HEAD BUMP
+h_l += hb_alpha * (s0 - h_l); h_r += hb_alpha * (s1 - h_r);
+s0 += h_l * hb_b; s1 += h_r * hb_b;
+
+// 4. DRIVE
+s0 *= drive_gain; s1 *= drive_gain;
+s0 = atan(s0); s1 = atan(s1);
+
+// 5. TAPE SPEED & AGE
+s_loss = (slider4 == 0 ? 0.5 : (slider4 == 1 ? 2.5 : 5.0)) + (age * 10);
+hf_f = (slider4 == 0 ? 18000 : (slider4 == 1 ? 14000 : 9000)) - (age * 5000);
+hf_f = max(2000, hf_f);
+hf_a = 1 - exp(-2 * $pi * hf_f / srate);
+hf_m = 1 - (2 ^ (-s_loss / 20));
+
+f_l += hf_a * (s0 - f_l); f_r += hf_a * (s1 - f_r);
+s0 += (f_l - s0) * hf_m;
+s1 += (f_r - s1) * hf_m;
+
+// 6. FINAL LP & AUTO-GAIN
+lp_l += lp_alpha * (s0 - lp_l); lp_r += lp_alpha * (s1 - lp_r);
+
+a_out = max(abs(lp_l), abs(lp_r));
+out_peak = (a_out > out_peak) ? a_out : out_peak * 0.99999;
+t_gain = (slider8 == 1) ? (in_peak / max(out_peak, 0.0001)) : (1/drive_gain);
+gain_coeff += 0.001 * (t_gain - gain_coeff);
+
+spl0 = lp_l * gain_coeff * out_trim;
+spl1 = lp_r * gain_coeff * out_trim;
