@@ -1,4 +1,4 @@
- esc:AnaTape v1.1.0. (by Rathje)
+desc:AnaTape v1.1.0. (by Rathje)
 
 slider1:7<0,24,0.1>Drive (dB)
 slider2:20000<2000,20000,100>High Cut (Hz)
