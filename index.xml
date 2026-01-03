@@ -48,6 +48,9 @@ A collection of my Reaper JSFX plugins.
       </version>
        <version name="1.1.0" author="Henrik Rathje" time="2026-01-03T21:44:00Z">
         <source file="AnaTape_1.1.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/0fa5ff820d9cab7840b9ca499f8be4168c14a08d/AnaTape_1.1.0.jsfx</source>
+      </version>       
+      <version name="1.2.0" author="Henrik Rathje" time="2026-01-03T22:14:00Z">
+        <source file="AnaTape_1.2.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/168d4271978b51095a3ac1fb68da60cb376b3035/AnaTape_1.2.0.jsfx</source>
       </version>
     </reapack>
     
