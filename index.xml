@@ -38,6 +38,15 @@ A collection of my Reaper JSFX plugins.
         <version name="1.1.0" author="Henrik Rathje" time="2026-01-01T22:42:00Z">
           <source file="AnaMaker_1.1.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/518d8f54e2f4634b645aaa62c6b4c5fd720602fb/AnaMaker_1.1.0.jsfx</source>
         </version>
-      </reapack>    
+      </reapack>   
+     <reapack name="AnaTape" type="effect" desc="Analog Tape Emulator">
+      <metadata>
+        <description><![CDATA[A simple analog tape emulator for bus saturation and analog vibe. I use it mostly on drums.]]></description>
+      </metadata>
+      <version name="1.0.0" author="Henrik Rathje" time="2026-01-03T20:56:00Z">
+        <source file="AnaTape.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/b75b4bcad5506d626c6e1d8918097dfdf4672e47/AnaTape.jsfx</source>
+      </version>
+    </reapack>
+    
   </category>
 </index>
