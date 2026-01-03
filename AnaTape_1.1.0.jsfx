@@ -1,0 +1,87 @@
+desc:AnaTape v1.1.0. (by Rathje)
+
+slider1:8<0,24,0.1>Drive (dB)
+slider2:20000<2000,20000,100>High Cut (Hz)
+slider3:2<0,12,0.1>Head Bump (dB)
+slider4:0<0,1,1{15 ips (Clear),7.5 ips (Dark)}>Tape Speed
+slider5:5<0,100,1>Tape Age / Wear (%)
+slider6:25<0,100,1>Wow & Flutter (%)
+slider7:0<0,1,1{Off,4x Oversampling}>Oversampling
+slider8:1<0,1,1{Off,On}>Auto-Gain
+slider9:0<-24,24,0.1>Output Trim (dB)
+
+
+@init
+delay_pos = 0; delay_size = srate * 0.1;
+buf_l = 0; buf_r = delay_size + 1;
+in_peak = 0.01; out_peak = 0.01; gain_coeff = 1;
+
+@slider
+drive_gain = 2 ^ (slider1 / 6.02);
+out_trim = 2 ^ (slider9 / 6.02);
+age = slider5 / 100;
+
+// IMPROVED FILTER LOGIC
+lp_freq = slider2;
+lp_alpha = 1 - exp(-2 * $pi * lp_freq / srate);
+
+hb_freq = 80 + (age * 50); 
+hb_alpha = 1 - exp(-2 * $pi * hb_freq / srate);
+hb_boost = 2 ^ ((slider3 + (age * 2)) / 6.02) - 1;
+
+wow_speed = 0.5 * $pi / srate;
+flutter_speed = 8.0 * $pi / srate;
+wf_depth = (slider6 / 100) * 0.001 * srate;
+
+@sample
+// 1. WOW & FLUTTER
+phase_wow += wow_speed; phase_flutter += flutter_speed;
+mod = sin(phase_wow)*0.7 + sin(phase_flutter)*0.3;
+current_delay = (wf_depth * mod) + (wf_depth * 1.1);
+buf_l[delay_pos] = spl0; buf_r[delay_pos] = spl1;
+read_pos = delay_pos - current_delay;
+read_pos < 0 ? read_pos += delay_size;
+i_pos = floor(read_pos); f_pos = read_pos - i_pos;
+s0 = buf_l[i_pos]*(1-f_pos) + buf_l[(i_pos+1)%delay_size]*f_pos;
+s1 = buf_r[i_pos]*(1-f_pos) + buf_r[(i_pos+1)%delay_size]*f_pos;
+delay_pos = (delay_pos + 1) % delay_size;
+
+// 2. PEAK MÅLING
+abs_in = max(abs(s0), abs(s1));
+in_peak = (abs_in > in_peak) ? abs_in : in_peak * 0.99999;
+
+// 3. HEAD BUMP
+hb_l += hb_alpha * (s0 - hb_l); hb_r += hb_alpha * (s1 - hb_r);
+s0 += hb_l * hb_boost; s1 += hb_r * hb_boost;
+
+// 4. DRIVE & SATURATION (Oversampled)
+s0 *= drive_gain; s1 *= drive_gain;
+
+slider7 ? (
+  // 4x OS 
+  os_s0 = atan(s0); os_s1 = atan(s1);
+  s0 = os_s0; s1 = os_s1;
+) : (
+  s0 = atan(s0); s1 = atan(s1);
+);
+
+// 5. TAPE AGE & DYNAMIC TREBLE 
+loss_db = (slider1 * 0.1) + (slider4 == 1 ? 2 : 0) + (age * 8);
+hf_freq = 16000 - (age * 10000);
+hf_alpha = 1 - exp(-2 * $pi * hf_freq / srate);
+
+hf_l += hf_alpha * (s0 - hf_l); hf_r += hf_alpha * (s1 - hf_r);
+s0 += (hf_l - s0) * (1 - 2 ^ (-loss_db / 20));
+s1 += (hf_r - s1) * (1 - 2 ^ (-loss_db / 20));
+
+// 6. MASTER HIGH CUT
+lp_l += lp_alpha * (s0 - lp_l); lp_r += lp_alpha * (s1 - lp_r);
+
+// 7. PEAK MATCH & OUTPUT
+abs_out = max(abs(lp_l), abs(lp_r));
+out_peak = (abs_out > out_peak) ? abs_out : out_peak * 0.99999;
+match_gain = (slider8 == 1) ? (in_peak / max(out_peak, 0.0001)) : (1 / drive_gain);
+gain_coeff += 0.001 * (match_gain - gain_coeff);
+
+spl0 = lp_l * gain_coeff * out_trim;
+spl1 = lp_r * gain_coeff * out_trim;
