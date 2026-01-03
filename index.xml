@@ -44,7 +44,7 @@ A collection of my Reaper JSFX plugins.
         <description><![CDATA[A simple analog tape emulator for bus saturation and analog vibe. I use it mostly on drums.]]></description>
       </metadata>
       <version name="1.0.0" author="Henrik Rathje" time="2026-01-03T20:56:00Z">
-        <source file="AnaTape.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/74faaaa2c7c8dcf1333259547e900298cf316351/AnaTape.jsfx</source>
+        <source file="AnaTape.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/1a38f2ed39f566d09ac660298066086216787b92/AnaTape.jsfx</source>
       </version>
     </reapack>
     
