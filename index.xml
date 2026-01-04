@@ -37,7 +37,10 @@ A collection of my Reaper JSFX plugins.
         </version>
         <version name="1.1.0" author="Henrik Rathje" time="2026-01-01T22:42:00Z">
           <source file="AnaMaker_1.1.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/518d8f54e2f4634b645aaa62c6b4c5fd720602fb/AnaMaker_1.1.0.jsfx</source>
-        </version>
+        </version>      
+        <version name="1.2.0" author="Henrik Rathje" time="2026-01-04T14:02:00Z">
+          <source file="AnaMaker_1.2.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/e13532e5ab5cef4eb1bcfd6a01a5866acce0a732/AnaMaker_1.2.0.jsfx</source>
+        </version>      
       </reapack>   
      <reapack name="AnaTape" type="effect" desc="Analog Tape Emulator">
       <metadata>
