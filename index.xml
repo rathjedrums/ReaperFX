@@ -59,7 +59,7 @@ A collection of my Reaper JSFX plugins.
         <source file="AnaTape_1.3.0.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/9f98f2e4bd3fb3dd653665bf1351926d43427730/AnaTape_1.3.0.jsfx</source>
       </version>
     </reapack>
-    <reapack name="AnaDrumGate" type="effect" desc="A Gate Developed for Drums">
+    <reapack name="AnaDrumGate" type="effect" desc="AnaDrumGate">
       <metadata>
         <description><![CDATA[a gate specifically for drums. It has LPF and HPF for detection precision. Release and attack curve adjustment, to finetune the attack and decay of the gate. And a listen switch for detection control.]]></description>
       </metadata>
