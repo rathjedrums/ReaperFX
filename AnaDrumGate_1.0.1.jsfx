@@ -1,0 +1,117 @@
+desc:AnaDrumGate - drum gate as I like it
+author:Henrik Rathje
+
+slider1:-20<-50,0,0.1>Threshold (dB)
+slider2:-3<-24,0,0.5>Hysteresis (dB)
+slider3:5<0,100,0.1>Attack (ms)
+slider4:100<0,1000,1>Release (ms)
+slider5:20<0,500,1>Hold (ms)
+slider6:1<0.1,5,0.01>Attack Curve (1=Lin, >1=S-Curve)
+slider7:1<0.1,5,0.01>Release Curve (1=Lin, <1=Exp)
+slider8:20<20,20000,1>Detector HPF (Hz)
+slider9:20000<20,20000,1>Detector LPF (Hz)
+slider10:0<0,1,1{Off,On}>Listen (Monitor Filter)
+
+@init
+db2log = log(10) / 20;
+
+// State variables
+envelope = 0;
+hold_timer = 0;
+gate_open = 0;
+
+// Filter Buffers
+h_l_x1=h_l_x2=h_l_y1=h_l_y2=0;
+h_r_x1=h_r_x2=h_r_y1=h_r_y2=0;
+l_l_x1=l_l_x2=l_l_y1=l_l_y2=0;
+l_r_x1=l_r_x2=l_r_y1=l_r_y2=0;
+
+@slider
+thresh_open = exp(slider1 * db2log);
+thresh_close = exp((slider1 + slider2) * db2log);
+
+att_coeff = slider3 > 0 ? 1 - exp(-1 / (slider3 * srate / 1000)) : 1;
+rel_coeff = slider4 > 0 ? 1 - exp(-1 / (slider4 * srate / 1000)) : 1;
+hold_samples = (slider5 / 1000) * srate;
+
+// Curve exponents
+att_curve = slider6;
+rel_curve = slider7;
+
+// --- HPF Biquad ---
+h_f0 = slider8;
+h_q = 0.707; 
+h_w0 = 2 * $pi * h_f0 / srate;
+h_cosw0 = cos(h_w0);
+h_alpha = sin(h_w0) / (2 * h_q);
+h_b0 = (1 + h_cosw0) / 2;
+h_b1 = -(1 + h_cosw0);
+h_b2 = (1 + h_cosw0) / 2;
+h_a0 = 1 + h_alpha;
+h_a1 = -2 * h_cosw0;
+h_a2 = 1 - h_alpha;
+h_b0 /= h_a0; h_b1 /= h_a0; h_b2 /= h_a0; h_a1 /= h_a0; h_a2 /= h_a0;
+
+// --- LPF Biquad ---
+l_f0 = slider9;
+l_q = 0.707;
+l_w0 = 2 * $pi * l_f0 / srate;
+l_cosw0 = cos(l_w0);
+l_alpha = sin(l_w0) / (2 * l_q);
+l_b0 = (1 - l_cosw0) / 2;
+l_b1 = 1 - l_cosw0;
+l_b2 = (1 - l_cosw0) / 2;
+l_a0 = 1 + l_alpha;
+l_a1 = -2 * l_cosw0;
+l_a2 = 1 - l_alpha;
+l_b0 /= l_a0; l_b1 /= l_a0; l_b2 /= l_a0; l_a1 /= l_a0; l_a2 /= l_a0;
+
+@sample
+// 1. Detector Filtering
+det_l = h_b0*spl0 + h_b1*h_l_x1 + h_b2*h_l_x2 - h_a1*h_l_y1 - h_a2*h_l_y2;
+h_l_x2 = h_l_x1; h_l_x1 = spl0; h_l_y2 = h_l_y1; h_l_y1 = det_l;
+det_r = h_b0*spl1 + h_b1*h_r_x1 + h_b2*h_r_x2 - h_a1*h_r_y1 - h_a2*h_r_y2;
+h_r_x2 = h_r_x1; h_r_x1 = spl1; h_r_y2 = h_r_y1; h_r_y1 = det_r;
+
+f_det_l = l_b0*det_l + l_b1*l_l_x1 + l_b2*l_l_x2 - l_a1*l_l_y1 - l_a2*l_l_y2;
+l_l_x2 = l_l_x1; l_l_x1 = det_l; l_l_y2 = l_l_y1; l_l_y1 = f_det_l;
+f_det_r = l_b0*det_r + l_b1*l_r_x1 + l_b2*l_r_x2 - l_a1*l_r_y1 - l_a2*l_r_y2;
+l_r_x2 = l_r_x1; l_r_x1 = det_r; l_r_y2 = l_r_y1; l_r_y1 = f_det_r;
+
+// 2. Logic
+input_level = max(abs(f_det_l), abs(f_det_r));
+
+input_level > thresh_open ? (
+  gate_open = 1;
+  hold_timer = hold_samples;
+) : (
+  input_level < thresh_close ? (
+    hold_timer > 0 ? (
+      hold_timer -= 1;
+    ) : (
+      gate_open = 0;
+    );
+  );
+);
+
+// 3. Envelope with Directional Curve
+target = gate_open;
+
+// Determine if we are in Attack or Release phase
+is_attacking = (target > envelope);
+follow_speed = is_attacking ? att_coeff : rel_coeff;
+
+// Update core linear envelope
+envelope += (target - envelope) * follow_speed;
+
+// Apply specific curve based on direction
+curved_gain = is_attacking ? pow(envelope, att_curve) : pow(envelope, rel_curve);
+
+// 4. Output
+slider10 == 1 ? (
+  spl0 = f_det_l;
+  spl1 = f_det_r;
+) : (
+  spl0 *= curved_gain;
+  spl1 *= curved_gain;
+);
