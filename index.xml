@@ -65,7 +65,7 @@ A collection of my Reaper JSFX plugins.
       </metadata>
       <version name="1.0.1" author="Henrik Rathje" time="2026-02-28T11:36:00Z">
         <source file="AnaDrumGate_1.0.1.jsfx">https://raw.githubusercontent.com/rathjedrums/ReaperFX/55484710e628da00d184ba56664cff057fdd72cc/AnaDrumGate_1.0.1.jsfx</source>
-      </version>
+      </version> 
     </reapack>
   </category>
 </index>
